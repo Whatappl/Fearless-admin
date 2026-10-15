@@ -65,24 +65,19 @@
   }
   @keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
 
-  .card h2 { font-size:13px; font-weight:700; margin-bottom:14px; color:#fff; letter-spacing:-.2px; }
+  .card h2 { font-size:13px; font-weight:700; margin-bottom:14px; color:#fff; }
 
   .field { margin-bottom:12px; }
   .field label { display:block; font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:6px; font-weight:600; }
   .field input, .field select {
     width:100%; padding:12px 14px;
-    background:rgba(0,0,0,.35);
-    border:1px solid var(--stroke);
-    border-radius:11px;
-    color:#fff; font-family:inherit; font-size:14px;
+    background:rgba(0,0,0,.35); border:1px solid var(--stroke);
+    border-radius:11px; color:#fff; font-family:inherit; font-size:14px;
     transition:all .25s;
     -webkit-user-select:text; user-select:text;
   }
   .field input::placeholder { color:var(--faint); }
-  .field input:focus, .field select:focus {
-    outline:none; border-color:rgba(0,200,83,.5);
-    box-shadow:0 0 0 3px rgba(0,200,83,.12);
-  }
+  .field input:focus, .field select:focus { outline:none; border-color:rgba(0,200,83,.5); box-shadow:0 0 0 3px rgba(0,200,83,.12); }
 
   .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
@@ -112,8 +107,7 @@
     padding:7px 11px; border-radius:8px;
     background:rgba(255,255,255,.05); border:1px solid var(--stroke);
     color:var(--dim); font-family:inherit; font-size:11px; font-weight:600;
-    cursor:pointer; transition:all .2s;
-    white-space:nowrap;
+    cursor:pointer; transition:all .2s; white-space:nowrap;
   }
   .btn-sm:hover { color:var(--bright); border-color:rgba(0,200,83,.35); }
   .btn-sm.danger:hover { color:var(--red); border-color:rgba(255,64,64,.4); }
@@ -123,28 +117,15 @@
     display:flex; align-items:center; gap:10px;
     padding:12px 14px; margin-bottom:8px;
     background:rgba(0,0,0,.28);
-    border:1px solid var(--stroke);
-    border-radius:12px;
+    border:1px solid var(--stroke); border-radius:12px;
     animation:rise .4s var(--spring) both;
   }
   .key-item .info { flex:1; min-width:0; }
-  .key-item .k {
-    font-family:'JetBrains Mono', monospace;
-    font-size:12px; color:var(--bright);
-    word-break:break-all;
-    -webkit-user-select:all; user-select:all;
-  }
-  .key-item .meta {
-    font-size:10.5px; color:var(--faint); margin-top:4px;
-    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
-  }
+  .key-item .k { font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--bright); word-break:break-all; -webkit-user-select:all; user-select:all; }
+  .key-item .meta { font-size:10.5px; color:var(--faint); margin-top:4px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
   .key-item .actions { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
 
-  .badge {
-    padding:2px 7px; border-radius:8px;
-    font-size:9px; font-weight:700; letter-spacing:.5px;
-    text-transform:uppercase;
-  }
+  .badge { padding:2px 7px; border-radius:8px; font-size:9px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
   .badge.active { background:rgba(0,200,83,.15); color:var(--bright); }
   .badge.expired { background:rgba(255,64,64,.12); color:var(--red); }
   .badge.ready { background:rgba(255,176,32,.12); color:var(--amber); }
@@ -163,15 +144,8 @@
   }
   .tabs button.active { background:rgba(0,200,83,.12); color:var(--bright); border-color:rgba(0,200,83,.3); }
 
-  .stat-grid {
-    display:grid; grid-template-columns:repeat(3, 1fr);
-    gap:8px; margin-bottom:14px;
-  }
-  .stat {
-    padding:12px 8px; text-align:center;
-    background:rgba(0,0,0,.28); border:1px solid var(--stroke);
-    border-radius:12px;
-  }
+  .stat-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:14px; }
+  .stat { padding:12px 8px; text-align:center; background:rgba(0,0,0,.28); border:1px solid var(--stroke); border-radius:12px; }
   .stat b { display:block; font-family:'JetBrains Mono', monospace; font-size:18px; color:var(--bright); font-weight:700; }
   .stat span { font-size:9.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.6px; }
 
@@ -184,11 +158,29 @@
     border:1px solid rgba(0,200,83,.3);
     z-index:999; opacity:0;
     transition:all .35s var(--spring);
-    pointer-events:none;
-    max-width:80vw; text-align:center;
+    pointer-events:none; max-width:80vw; text-align:center;
   }
   .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
   .toast.error { color:var(--red); border-color:rgba(255,64,64,.35); }
+
+  /* DEBUG PANEL */
+  #debug {
+    margin-top:14px;
+    background:rgba(0,0,0,.5);
+    border:1px solid var(--stroke);
+    border-radius:12px;
+    padding:12px 14px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px; line-height:1.7;
+    max-height:220px; overflow-y:auto;
+    white-space:pre-wrap; word-break:break-all;
+    color:#9be89b;
+    display:none;
+  }
+  #debug.show { display:block; }
+  #debug .err { color:#ff8080; }
+  #debug .warn { color:#ffb020; }
+  #debug .info { color:#8ab4ff; }
 
   #login { max-width:400px; margin:auto; }
   #login h2 { font-size:16px; margin-bottom:6px; }
@@ -201,12 +193,7 @@
     text-align:center; margin-bottom:14px;
   }
   .key-display .lbl { font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:1.4px; margin-bottom:10px; font-weight:600; }
-  .key-display .key {
-    font-family:'JetBrains Mono', monospace;
-    font-size:16px; font-weight:700; color:#fff;
-    word-break:break-all; line-height:1.4;
-    -webkit-user-select:all; user-select:all;
-  }
+  .key-display .key { font-family:'JetBrains Mono', monospace; font-size:16px; font-weight:700; color:#fff; word-break:break-all; line-height:1.4; -webkit-user-select:all; user-select:all; }
   .key-display .expires { font-size:11px; color:var(--faint); margin-top:10px; font-family:'JetBrains Mono', monospace; }
 </style>
 </head>
@@ -216,24 +203,23 @@
 
 <div class="wrap">
 
-  <!-- LOGIN -->
   <div id="login" style="display:none;">
     <div class="card">
       <h2>Admin login</h2>
       <p>Enter your credentials to manage keys.</p>
       <div class="field">
         <label>Username</label>
-        <input type="text" id="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <input type="text" id="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" value="fearlessffx">
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" id="password" autocomplete="current-password">
+        <input type="password" id="password" autocomplete="current-password" value="Fearless123">
       </div>
       <button class="btn" id="loginBtn">Sign in</button>
+      <div id="debug"></div>
     </div>
   </div>
 
-  <!-- PANEL -->
   <div id="panel" style="display:none;">
     <header>
       <div class="logo">FF</div>
@@ -250,12 +236,10 @@
     <div class="tab-panel" id="tab-generate">
       <div class="card">
         <h2>Generate new key</h2>
-
         <div class="field">
           <label>Note (buyer name / purpose)</label>
           <input type="text" id="genNote" placeholder="e.g. Micheal — Tecno Spark">
         </div>
-
         <div class="row">
           <div class="field">
             <label>Duration</label>
@@ -278,7 +262,6 @@
             </select>
           </div>
         </div>
-
         <div class="row">
           <div class="field">
             <label>Product</label>
@@ -297,12 +280,10 @@
             </select>
           </div>
         </div>
-
         <div class="field" id="deviceField" style="display:none;">
           <label>Device fingerprint</label>
           <input type="text" id="genDevice" placeholder="fe-ffh4x-...">
         </div>
-
         <button class="btn" id="genBtn">
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Generate key
@@ -330,17 +311,14 @@
     <div class="tab-panel" id="tab-keys" style="display:none;">
       <div class="card">
         <h2>All keys <span id="keyCount" style="color:var(--faint);font-weight:400;font-size:11px;"></span></h2>
-
         <div class="field" style="margin-bottom:10px;">
           <input type="text" id="searchKeys" placeholder="Search key / note / device…">
         </div>
-
         <div class="row3" style="margin-bottom:12px;">
           <button class="btn-sm active" data-filter="all" style="padding:9px;">All</button>
           <button class="btn-sm" data-filter="active" style="padding:9px;">Active</button>
           <button class="btn-sm" data-filter="unused" style="padding:9px;">Unused</button>
         </div>
-
         <div id="keysList"><div class="empty">Loading…</div></div>
       </div>
     </div>
@@ -375,6 +353,7 @@
 (function(){
   const $ = id => document.getElementById(id);
   const toast = $('toast');
+  const dbg = $('debug');
   let tt;
   function say(msg, err){
     toast.textContent = msg;
@@ -383,13 +362,32 @@
     clearTimeout(tt);
     tt = setTimeout(()=>toast.classList.remove('show'), 2400);
   }
+  function log(msg, cls){
+    dbg.classList.add('show');
+    const line = document.createElement('div');
+    if (cls) line.className = cls;
+    const t = new Date().toLocaleTimeString();
+    line.textContent = '[' + t + '] ' + msg;
+    dbg.appendChild(line);
+    dbg.scrollTop = dbg.scrollHeight;
+    console.log('[debug]', msg);
+  }
 
   const SUPABASE_URL = 'https://nvrjvcwhyeeloblaozuh.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52cmp2Y3doeWVlbGVibGFvenVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwODk5NzUsImV4cCI6MjEwNzY2NTk3NX0.MgH5AP8Vqr0ZAA8GgdsIRMsrRVOg3hTF_C9bsT8rDAw';
-  const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const SALT = 'fe-ffh4x-salt';
   const SESSION_KEY = 'ffh4x_admin_session';
+
+  // Step 1 — check the supabase library loaded
+  log('supabase lib: ' + (typeof supabase !== 'undefined' ? 'loaded' : 'MISSING'), typeof supabase === 'undefined' ? 'err' : 'info');
+
+  let SB = null;
+  try {
+    SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    log('client created: ' + SUPABASE_URL, 'info');
+  } catch (e){
+    log('createClient FAILED: ' + e.message, 'err');
+  }
 
   async function sha256Hex(text){
     const buf = new TextEncoder().encode(text);
@@ -402,86 +400,111 @@
     return 'FEARLESS-FFH4X-' + part() + '-' + part();
   }
 
-  // ─── AUTH ───
   function showLogin(){
     $('login').style.display = 'block';
     $('panel').style.display = 'none';
+    log('showLogin called', 'info');
   }
   function showPanel(){
     $('login').style.display = 'none';
     $('panel').style.display = 'block';
+    log('showPanel called — panel visible', 'info');
     loadKeys(); loadStats(); loadActivations();
   }
 
+  // boot
   let sessionOk = false;
   try { sessionOk = localStorage.getItem(SESSION_KEY) === 'ok'; } catch {}
+  log('session stored: ' + sessionOk, 'info');
   if (sessionOk) showPanel(); else showLogin();
 
   async function doLogin(){
     const username = $('username').value.trim();
     const password = $('password').value;
 
+    log('login click — user: "' + username + '" pw length: ' + password.length, 'info');
+
     if (!username || !password){
       say('Fill both fields', true);
+      log('empty field', 'err');
       return;
     }
 
     const btn = $('loginBtn');
-    const originalHTML = btn.innerHTML;
     btn.disabled = true;
     btn.textContent = 'Checking…';
 
     try {
-      // fetch the stored hash — RLS allows anon read
-      const { data, error } = await SB
+      log('fetching admins row…', 'info');
+
+      const queryPromise = SB
         .from('admins')
         .select('password_hash')
         .eq('username', username)
         .limit(1);
 
-      if (error){
-        say('DB error: ' + error.message, true);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout 10s — Supabase not responding')), 10000)
+      );
+
+      const res = await Promise.race([queryPromise, timeoutPromise]);
+
+      log('response received', 'info');
+
+      if (res.error){
+        log('DB error: ' + JSON.stringify(res.error), 'err');
+        say('DB error: ' + res.error.message, true);
         return;
       }
 
-      if (!data || data.length === 0){
+      log('data rows: ' + (res.data ? res.data.length : 'null'), 'info');
+
+      if (!res.data || res.data.length === 0){
+        log('no row matched username "' + username + '"', 'err');
         say('Username not found', true);
         return;
       }
 
-      const storedHash = String(data[0].password_hash).trim().toLowerCase();
-      const typedHash  = await sha256Hex(password + ':' + SALT);
+      const storedHash = String(res.data[0].password_hash || '').trim().toLowerCase();
+      log('stored hash length: ' + storedHash.length, 'info');
+      log('stored hash preview: ' + storedHash.slice(0,16) + '…', 'info');
+
+      const typedHash = await sha256Hex(password + ':' + SALT);
+      log('typed hash preview:  ' + typedHash.slice(0,16) + '…', 'info');
 
       if (typedHash !== storedHash){
+        log('HASH MISMATCH', 'err');
         say('Wrong password', true);
         return;
       }
 
-      // success
+      log('MATCH — signing in', 'info');
       try { localStorage.setItem(SESSION_KEY, 'ok'); } catch {}
       say('Signed in');
       showPanel();
 
     } catch (e){
+      log('exception: ' + (e.message || e), 'err');
       say('Error: ' + (e.message || 'unknown'), true);
     } finally {
       btn.disabled = false;
-      btn.innerHTML = originalHTML;
+      btn.innerHTML = 'Sign in';
     }
   }
 
   $('loginBtn').addEventListener('click', doLogin);
   $('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-  $('username').addEventListener('keydown', e => { if (e.key === 'Enter') $('password').focus(); });
 
   $('logoutBtn').addEventListener('click', ()=>{
     try { localStorage.removeItem(SESSION_KEY); } catch {}
     $('username').value = '';
     $('password').value = '';
+    dbg.innerHTML = '';
+    dbg.classList.remove('show');
     showLogin();
   });
 
-  // ─── TABS ───
+  // TABS
   document.querySelectorAll('.tabs button').forEach(b=>{
     b.addEventListener('click', ()=>{
       document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
@@ -491,12 +514,10 @@
     });
   });
 
-  // ─── BIND TOGGLE ───
   $('genBind').addEventListener('change', ()=>{
     $('deviceField').style.display = $('genBind').value === '1' ? 'block' : 'none';
   });
 
-  // ─── GENERATE ───
   $('genBtn').addEventListener('click', async ()=>{
     const note = $('genNote').value.trim() || null;
     const days = parseFloat($('genDays').value);
@@ -505,35 +526,25 @@
     const bind = $('genBind').value === '1';
     const device = bind ? $('genDevice').value.trim() : null;
 
-    if (bind && !device) return say('Enter the device fingerprint', true);
+    if (bind && !device){ say('Enter the device fingerprint', true); return; }
 
     const key = makeKey();
-
     let expiresAt = null;
     if (days > 0 && from === 'generation'){
       expiresAt = new Date(Date.now() + days * 86400000).toISOString();
     }
 
     const btn = $('genBtn');
-    const originalHTML = btn.innerHTML;
     btn.disabled = true;
     btn.textContent = 'Generating…';
 
     try {
       const { error } = await SB.from('keys').insert({
-        key,
-        product,
-        device_id: device,
-        used: !!device,
-        expires_at: expiresAt,
-        expires_from: from,
-        note
+        key, product, device_id: device, used: !!device,
+        expires_at: expiresAt, expires_from: from, note
       });
 
-      if (error){
-        say(error.message, true);
-        return;
-      }
+      if (error){ say(error.message, true); return; }
 
       $('genResult').style.display = 'block';
       $('newKeyValue').textContent = key;
@@ -561,24 +572,20 @@
       say('Error: ' + (e.message || 'unknown'), true);
     } finally {
       btn.disabled = false;
-      btn.innerHTML = originalHTML;
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Generate key';
     }
   });
 
   $('copyNewKey').addEventListener('click', async ()=>{
-    try {
-      await navigator.clipboard.writeText($('newKeyValue').textContent);
-      say('Key copied');
-    } catch { say('Copy failed', true); }
+    try { await navigator.clipboard.writeText($('newKeyValue').textContent); say('Key copied'); }
+    catch { say('Copy failed', true); }
   });
 
-  // ─── KEYS ───
   let allKeys = [];
   let currentFilter = 'all';
 
   async function loadKeys(){
-    const { data, error } = await SB.from('keys')
-      .select('*').order('created_at', { ascending:false }).limit(500);
+    const { data, error } = await SB.from('keys').select('*').order('created_at', { ascending:false }).limit(500);
     if (error){ $('keysList').innerHTML = '<div class="empty">' + error.message + '</div>'; return; }
     allKeys = data || [];
     $('keyCount').textContent = '(' + allKeys.length + ')';
@@ -588,7 +595,6 @@
   function filterList(list){
     const q = $('searchKeys').value.trim().toLowerCase();
     let out = list;
-
     if (currentFilter === 'active'){
       out = out.filter(k => {
         const exp = k.expires_at ? new Date(k.expires_at).getTime() : null;
@@ -597,7 +603,6 @@
     } else if (currentFilter === 'unused'){
       out = out.filter(k => !k.device_id);
     }
-
     if (q){
       out = out.filter(k =>
         k.key.toLowerCase().includes(q) ||
@@ -657,8 +662,7 @@
 
       item.querySelector('[data-act="extend"]').addEventListener('click', async ()=>{
         const base = record.expires_at && new Date(record.expires_at).getTime() > Date.now()
-          ? new Date(record.expires_at).getTime()
-          : Date.now();
+          ? new Date(record.expires_at).getTime() : Date.now();
         const next = new Date(base + 7 * 86400000).toISOString();
         await SB.from('keys').update({ expires_at: next }).eq('key', k);
         say('Extended 7 days');
@@ -684,7 +688,6 @@
     });
   });
 
-  // ─── STATS ───
   async function loadStats(){
     const { data } = await SB.from('keys').select('*').limit(1000);
     if (!data) return;
@@ -705,7 +708,6 @@
     $('sPublic').textContent = fromPublic;
   }
 
-  // ─── ACTIVATIONS ───
   async function loadActivations(){
     const { data } = await SB.from('activations').select('*').order('activated_at', { ascending:false }).limit(20);
     if (!data || !data.length){ $('activationsList').innerHTML = '<div class="empty">No activations yet</div>'; return; }
