@@ -163,25 +163,6 @@
   .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
   .toast.error { color:var(--red); border-color:rgba(255,64,64,.35); }
 
-  /* DEBUG PANEL */
-  #debug {
-    margin-top:14px;
-    background:rgba(0,0,0,.5);
-    border:1px solid var(--stroke);
-    border-radius:12px;
-    padding:12px 14px;
-    font-family:'JetBrains Mono', monospace;
-    font-size:10.5px; line-height:1.7;
-    max-height:220px; overflow-y:auto;
-    white-space:pre-wrap; word-break:break-all;
-    color:#9be89b;
-    display:none;
-  }
-  #debug.show { display:block; }
-  #debug .err { color:#ff8080; }
-  #debug .warn { color:#ffb020; }
-  #debug .info { color:#8ab4ff; }
-
   #login { max-width:400px; margin:auto; }
   #login h2 { font-size:16px; margin-bottom:6px; }
   #login p { font-size:12px; color:var(--dim); margin-bottom:16px; }
@@ -209,14 +190,13 @@
       <p>Enter your credentials to manage keys.</p>
       <div class="field">
         <label>Username</label>
-        <input type="text" id="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" value="fearlessffx">
+        <input type="text" id="username" autocomplete="username" autocapitalize="off" spellcheck="false">
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" id="password" autocomplete="current-password" value="Fearless123">
+        <input type="password" id="password" autocomplete="current-password">
       </div>
       <button class="btn" id="loginBtn">Sign in</button>
-      <div id="debug"></div>
     </div>
   </div>
 
@@ -353,7 +333,6 @@
 (function(){
   const $ = id => document.getElementById(id);
   const toast = $('toast');
-  const dbg = $('debug');
   let tt;
   function say(msg, err){
     toast.textContent = msg;
@@ -362,133 +341,43 @@
     clearTimeout(tt);
     tt = setTimeout(()=>toast.classList.remove('show'), 2400);
   }
-  function log(msg, cls){
-    dbg.classList.add('show');
-    const line = document.createElement('div');
-    if (cls) line.className = cls;
-    const t = new Date().toLocaleTimeString();
-    line.textContent = '[' + t + '] ' + msg;
-    dbg.appendChild(line);
-    dbg.scrollTop = dbg.scrollHeight;
-    console.log('[debug]', msg);
-  }
+
+  // ─── LOGIN CREDENTIALS (change these) ───
+  const ADMIN_USER = 'fearlessffx';
+  const ADMIN_PASS = 'Fearless123';
+  // ───────────────────────────────────────
 
   const SUPABASE_URL = 'https://nvrjvcwhyeeloblaozuh.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52cmp2Y3doeWVlbGVibGFvenVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwODk5NzUsImV4cCI6MjEwNzY2NTk3NX0.MgH5AP8Vqr0ZAA8GgdsIRMsrRVOg3hTF_C9bsT8rDAw';
-  const SALT = 'fe-ffh4x-salt';
+  const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
   const SESSION_KEY = 'ffh4x_admin_session';
-
-  // Step 1 — check the supabase library loaded
-  log('supabase lib: ' + (typeof supabase !== 'undefined' ? 'loaded' : 'MISSING'), typeof supabase === 'undefined' ? 'err' : 'info');
-
-  let SB = null;
-  try {
-    SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    log('client created: ' + SUPABASE_URL, 'info');
-  } catch (e){
-    log('createClient FAILED: ' + e.message, 'err');
-  }
-
-  async function sha256Hex(text){
-    const buf = new TextEncoder().encode(text);
-    const hash = await crypto.subtle.digest('SHA-256', buf);
-    return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2,'0')).join('');
-  }
 
   function makeKey(){
     const part = () => Math.random().toString(36).substring(2, 6).toUpperCase();
     return 'FEARLESS-FFH4X-' + part() + '-' + part();
   }
 
-  function showLogin(){
-    $('login').style.display = 'block';
-    $('panel').style.display = 'none';
-    log('showLogin called', 'info');
-  }
+  function showLogin(){ $('login').style.display = 'block'; $('panel').style.display = 'none'; }
   function showPanel(){
     $('login').style.display = 'none';
     $('panel').style.display = 'block';
-    log('showPanel called — panel visible', 'info');
     loadKeys(); loadStats(); loadActivations();
   }
 
-  // boot
   let sessionOk = false;
   try { sessionOk = localStorage.getItem(SESSION_KEY) === 'ok'; } catch {}
-  log('session stored: ' + sessionOk, 'info');
   if (sessionOk) showPanel(); else showLogin();
 
-  async function doLogin(){
-    const username = $('username').value.trim();
-    const password = $('password').value;
-
-    log('login click — user: "' + username + '" pw length: ' + password.length, 'info');
-
-    if (!username || !password){
-      say('Fill both fields', true);
-      log('empty field', 'err');
-      return;
-    }
-
-    const btn = $('loginBtn');
-    btn.disabled = true;
-    btn.textContent = 'Checking…';
-
-    try {
-      log('fetching admins row…', 'info');
-
-      const queryPromise = SB
-        .from('admins')
-        .select('password_hash')
-        .eq('username', username)
-        .limit(1);
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('timeout 10s — Supabase not responding')), 10000)
-      );
-
-      const res = await Promise.race([queryPromise, timeoutPromise]);
-
-      log('response received', 'info');
-
-      if (res.error){
-        log('DB error: ' + JSON.stringify(res.error), 'err');
-        say('DB error: ' + res.error.message, true);
-        return;
-      }
-
-      log('data rows: ' + (res.data ? res.data.length : 'null'), 'info');
-
-      if (!res.data || res.data.length === 0){
-        log('no row matched username "' + username + '"', 'err');
-        say('Username not found', true);
-        return;
-      }
-
-      const storedHash = String(res.data[0].password_hash || '').trim().toLowerCase();
-      log('stored hash length: ' + storedHash.length, 'info');
-      log('stored hash preview: ' + storedHash.slice(0,16) + '…', 'info');
-
-      const typedHash = await sha256Hex(password + ':' + SALT);
-      log('typed hash preview:  ' + typedHash.slice(0,16) + '…', 'info');
-
-      if (typedHash !== storedHash){
-        log('HASH MISMATCH', 'err');
-        say('Wrong password', true);
-        return;
-      }
-
-      log('MATCH — signing in', 'info');
+  function doLogin(){
+    const u = $('username').value.trim();
+    const p = $('password').value;
+    if (u === ADMIN_USER && p === ADMIN_PASS){
       try { localStorage.setItem(SESSION_KEY, 'ok'); } catch {}
       say('Signed in');
       showPanel();
-
-    } catch (e){
-      log('exception: ' + (e.message || e), 'err');
-      say('Error: ' + (e.message || 'unknown'), true);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = 'Sign in';
+    } else {
+      say('Invalid credentials', true);
     }
   }
 
@@ -499,12 +388,9 @@
     try { localStorage.removeItem(SESSION_KEY); } catch {}
     $('username').value = '';
     $('password').value = '';
-    dbg.innerHTML = '';
-    dbg.classList.remove('show');
     showLogin();
   });
 
-  // TABS
   document.querySelectorAll('.tabs button').forEach(b=>{
     b.addEventListener('click', ()=>{
       document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
