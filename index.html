@@ -114,16 +114,26 @@
   .btn-sm.active { color:var(--bright); border-color:rgba(0,200,83,.4); background:rgba(0,200,83,.1); }
 
   .key-item {
-    display:flex; align-items:center; gap:10px;
     padding:12px 14px; margin-bottom:8px;
     background:rgba(0,0,0,.28);
     border:1px solid var(--stroke); border-radius:12px;
     animation:rise .4s var(--spring) both;
   }
-  .key-item .info { flex:1; min-width:0; }
-  .key-item .k { font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--bright); word-break:break-all; -webkit-user-select:all; user-select:all; }
-  .key-item .meta { font-size:10.5px; color:var(--faint); margin-top:4px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  .key-item .actions { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+  .key-item .row1 { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .key-item .k {
+    flex:1;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px; color:var(--bright);
+    word-break:break-all;
+    -webkit-user-select:all; user-select:all;
+  }
+  .key-item .actions { display:flex; gap:6px; flex-shrink:0; }
+  .key-item .meta {
+    font-size:10.5px; color:var(--faint);
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  }
+  .key-item .meta .lbl { color:var(--dim); }
+  .key-item .meta .val { color:#c8c8c8; font-family:'JetBrains Mono', monospace; }
 
   .badge { padding:2px 7px; border-radius:8px; font-size:9px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
   .badge.active { background:rgba(0,200,83,.15); color:var(--bright); }
@@ -213,13 +223,16 @@
       <button data-tab="stats">Stats</button>
     </div>
 
+    <!-- GENERATE — only note + duration + expiry-from -->
     <div class="tab-panel" id="tab-generate">
       <div class="card">
         <h2>Generate new key</h2>
+
         <div class="field">
-          <label>Note (buyer name / purpose)</label>
+          <label>Note</label>
           <input type="text" id="genNote" placeholder="e.g. Micheal — Tecno Spark">
         </div>
+
         <div class="row">
           <div class="field">
             <label>Duration</label>
@@ -242,28 +255,7 @@
             </select>
           </div>
         </div>
-        <div class="row">
-          <div class="field">
-            <label>Product</label>
-            <select id="genProduct">
-              <option value="vip" selected>VIP</option>
-              <option value="pro">Pro</option>
-              <option value="elite">Elite</option>
-              <option value="test">Test</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Bind device?</label>
-            <select id="genBind">
-              <option value="0" selected>No — first device claims</option>
-              <option value="1">Yes — paste device ID</option>
-            </select>
-          </div>
-        </div>
-        <div class="field" id="deviceField" style="display:none;">
-          <label>Device fingerprint</label>
-          <input type="text" id="genDevice" placeholder="fe-ffh4x-...">
-        </div>
+
         <button class="btn" id="genBtn">
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Generate key
@@ -288,6 +280,7 @@
       </div>
     </div>
 
+    <!-- KEYS — key, duration, device, source only -->
     <div class="tab-panel" id="tab-keys" style="display:none;">
       <div class="card">
         <h2>All keys <span id="keyCount" style="color:var(--faint);font-weight:400;font-size:11px;"></span></h2>
@@ -342,15 +335,14 @@
     tt = setTimeout(()=>toast.classList.remove('show'), 2400);
   }
 
-  // ─── LOGIN CREDENTIALS (change these) ───
+  // ─── LOGIN ───
   const ADMIN_USER = 'fearlessffx';
   const ADMIN_PASS = 'Fearless123';
-  // ───────────────────────────────────────
 
+  // ─── SUPABASE ───
   const SUPABASE_URL = 'https://nvrjvcwhyeeloblaozuh.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52cmp2Y3doeWVlbGVibGFvenVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwODk5NzUsImV4cCI6MjEwNzY2NTk3NX0.MgH5AP8Vqr0ZAA8GgdsIRMsrRVOg3hTF_C9bsT8rDAw';
   const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const SESSION_KEY = 'ffh4x_admin_session';
 
   function makeKey(){
@@ -380,7 +372,6 @@
       say('Invalid credentials', true);
     }
   }
-
   $('loginBtn').addEventListener('click', doLogin);
   $('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
@@ -400,19 +391,11 @@
     });
   });
 
-  $('genBind').addEventListener('change', ()=>{
-    $('deviceField').style.display = $('genBind').value === '1' ? 'block' : 'none';
-  });
-
+  // ─── GENERATE ───
   $('genBtn').addEventListener('click', async ()=>{
     const note = $('genNote').value.trim() || null;
     const days = parseFloat($('genDays').value);
     const from = $('genFrom').value;
-    const product = $('genProduct').value;
-    const bind = $('genBind').value === '1';
-    const device = bind ? $('genDevice').value.trim() : null;
-
-    if (bind && !device){ say('Enter the device fingerprint', true); return; }
 
     const key = makeKey();
     let expiresAt = null;
@@ -426,8 +409,13 @@
 
     try {
       const { error } = await SB.from('keys').insert({
-        key, product, device_id: device, used: !!device,
-        expires_at: expiresAt, expires_from: from, note
+        key,
+        product: 'vip',
+        device_id: null,
+        used: false,
+        expires_at: expiresAt,
+        expires_from: from,
+        note
       });
 
       if (error){ say(error.message, true); return; }
@@ -442,9 +430,7 @@
         const h = days * 24;
         expText = 'Expires ' + (h < 24 ? h + ' hour' + (h === 1 ? '' : 's') : days + ' day' + (days === 1 ? '' : 's')) + ' after activation';
       }
-
-      const devText = device ? ('· Bound to ' + device.slice(0,14) + '…') : '· Unbound';
-      $('newKeyMeta').textContent = expText + ' ' + devText;
+      $('newKeyMeta').textContent = expText;
 
       $('waSend').href = 'https://wa.me/?text=' + encodeURIComponent(
         'Your Fearless FFH4X key:\n\n' + key + '\n\n' + expText +
@@ -467,6 +453,7 @@
     catch { say('Copy failed', true); }
   });
 
+  // ─── KEYS ───
   let allKeys = [];
   let currentFilter = 'all';
 
@@ -499,6 +486,19 @@
     return out;
   }
 
+  function formatDuration(k){
+    if (!k.expires_at){
+      if (k.expires_from === 'activation') return '5h after activation';
+      return 'never';
+    }
+    const exp = new Date(k.expires_at);
+    const isActivation = k.expires_from === 'activation';
+    // duration display: compute original set duration if possible
+    // we don't store the original duration number, so just show the date + "from activation/generation"
+    const stamp = exp.toLocaleDateString() + ' ' + String(exp.getHours()).padStart(2,'0') + ':' + String(exp.getMinutes()).padStart(2,'0');
+    return stamp + (isActivation ? ' (from activation)' : '');
+  }
+
   function renderKeys(list){
     const el = $('keysList');
     const filtered = filterList(list);
@@ -516,43 +516,36 @@
       else if (bound && exp){ badgeClass = 'active'; badgeText = 'Active'; }
       else if (bound){ badgeClass = 'bound'; badgeText = 'Bound'; }
 
-      const expText = exp ? exp.toLocaleDateString() + ' ' + exp.getHours() + ':' + String(exp.getMinutes()).padStart(2,'0') : '—';
-      const sourceBadge = fromPublic ? '<span class="badge public">Public</span>' : '<span class="badge admin">Admin</span>';
+      const sourceBadge = fromPublic
+        ? '<span class="badge public">From Public</span>'
+        : '<span class="badge admin">From Admin</span>';
+
+      const deviceText = bound
+        ? '<span class="lbl">Device</span> <span class="val">' + String(k.device_id).slice(0, 26) + '…</span>'
+        : '<span class="lbl">Device</span> <span class="val">— unbound —</span>';
 
       return '<div class="key-item" data-key="' + encodeURIComponent(k.key) + '">' +
-        '<div class="info">' +
+        '<div class="row1">' +
           '<div class="k">' + k.key + '</div>' +
-          '<div class="meta">' +
-            '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
-            sourceBadge +
-            '<span>' + (bound ? 'Bound' : 'Unbound') + '</span>' +
-            '<span>Exp ' + expText + '</span>' +
-            (k.note ? '<span>' + String(k.note).slice(0, 40) + '</span>' : '') +
+          '<div class="actions">' +
+            '<button class="btn-sm" data-act="copy">Copy</button>' +
+            '<button class="btn-sm danger" data-act="revoke">Kill</button>' +
           '</div>' +
         '</div>' +
-        '<div class="actions">' +
-          '<button class="btn-sm" data-act="copy">Copy</button>' +
-          '<button class="btn-sm" data-act="extend">+7d</button>' +
-          '<button class="btn-sm danger" data-act="revoke">Kill</button>' +
+        '<div class="meta">' +
+          '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
+          sourceBadge +
+          '<span class="lbl">Duration</span> <span class="val">' + formatDuration(k) + '</span>' +
+          deviceText +
         '</div>' +
       '</div>';
     }).join('');
 
     el.querySelectorAll('.key-item').forEach(item=>{
       const k = decodeURIComponent(item.dataset.key);
-      const record = allKeys.find(x => x.key === k);
 
       item.querySelector('[data-act="copy"]').addEventListener('click', async ()=>{
         try { await navigator.clipboard.writeText(k); say('Copied'); } catch {}
-      });
-
-      item.querySelector('[data-act="extend"]').addEventListener('click', async ()=>{
-        const base = record.expires_at && new Date(record.expires_at).getTime() > Date.now()
-          ? new Date(record.expires_at).getTime() : Date.now();
-        const next = new Date(base + 7 * 86400000).toISOString();
-        await SB.from('keys').update({ expires_at: next }).eq('key', k);
-        say('Extended 7 days');
-        loadKeys();
       });
 
       item.querySelector('[data-act="revoke"]').addEventListener('click', async ()=>{
@@ -574,6 +567,7 @@
     });
   });
 
+  // ─── STATS ───
   async function loadStats(){
     const { data } = await SB.from('keys').select('*').limit(1000);
     if (!data) return;
@@ -594,19 +588,18 @@
     $('sPublic').textContent = fromPublic;
   }
 
+  // ─── ACTIVATIONS ───
   async function loadActivations(){
     const { data } = await SB.from('activations').select('*').order('activated_at', { ascending:false }).limit(20);
     if (!data || !data.length){ $('activationsList').innerHTML = '<div class="empty">No activations yet</div>'; return; }
     $('activationsList').innerHTML = data.map(a=>{
       const t = new Date(a.activated_at);
-      const when = t.toLocaleDateString() + ' ' + t.getHours() + ':' + String(t.getMinutes()).padStart(2,'0');
+      const when = t.toLocaleDateString() + ' ' + String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
       return '<div class="key-item">' +
-        '<div class="info">' +
-          '<div class="k" style="font-size:11.5px;">' + a.key + '</div>' +
-          '<div class="meta">' +
-            '<span>' + String(a.device_id || '').slice(0, 24) + '…</span>' +
-            '<span>' + when + '</span>' +
-          '</div>' +
+        '<div class="row1"><div class="k" style="font-size:11.5px;">' + a.key + '</div></div>' +
+        '<div class="meta">' +
+          '<span class="lbl">Device</span> <span class="val">' + String(a.device_id || '').slice(0, 24) + '…</span>' +
+          '<span class="lbl">At</span> <span class="val">' + when + '</span>' +
         '</div>' +
       '</div>';
     }).join('');
