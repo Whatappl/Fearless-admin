@@ -200,11 +200,11 @@
       <p>Enter your credentials to manage keys.</p>
       <div class="field">
         <label>Username</label>
-        <input type="text" id="username" autocomplete="username" autocapitalize="off" spellcheck="false">
+        <input type="text" id="username" autocomplete="username" autocapitalize="off" spellcheck="false" value="fearlessffx">
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" id="password" autocomplete="current-password">
+        <input type="password" id="password" autocomplete="current-password" value="Fearless123">
       </div>
       <button class="btn" id="loginBtn">Sign in</button>
     </div>
@@ -223,16 +223,13 @@
       <button data-tab="stats">Stats</button>
     </div>
 
-    <!-- GENERATE — only note + duration + expiry-from -->
     <div class="tab-panel" id="tab-generate">
       <div class="card">
         <h2>Generate new key</h2>
-
         <div class="field">
-          <label>Note</label>
+          <label>Note (buyer name / purpose)</label>
           <input type="text" id="genNote" placeholder="e.g. Micheal — Tecno Spark">
         </div>
-
         <div class="row">
           <div class="field">
             <label>Duration</label>
@@ -255,7 +252,6 @@
             </select>
           </div>
         </div>
-
         <button class="btn" id="genBtn">
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Generate key
@@ -280,7 +276,6 @@
       </div>
     </div>
 
-    <!-- KEYS — key, duration, device, source only -->
     <div class="tab-panel" id="tab-keys" style="display:none;">
       <div class="card">
         <h2>All keys <span id="keyCount" style="color:var(--faint);font-weight:400;font-size:11px;"></span></h2>
@@ -335,11 +330,10 @@
     tt = setTimeout(()=>toast.classList.remove('show'), 2400);
   }
 
-  // ─── LOGIN ───
   const ADMIN_USER = 'fearlessffx';
   const ADMIN_PASS = 'Fearless123';
 
-  // ─── SUPABASE ───
+  // ═══ SUPABASE ═══
   const SUPABASE_URL = 'https://nvrjvcwhyeeloblaozuh.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52cmp2Y3doeWVlbGVibGFvenVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwODk5NzUsImV4cCI6MjEwNzY2NTk3NX0.MgH5AP8Vqr0ZAA8GgdsIRMsrRVOg3hTF_C9bsT8rDAw';
   const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -391,7 +385,6 @@
     });
   });
 
-  // ─── GENERATE ───
   $('genBtn').addEventListener('click', async ()=>{
     const note = $('genNote').value.trim() || null;
     const days = parseFloat($('genDays').value);
@@ -418,7 +411,10 @@
         note
       });
 
-      if (error){ say(error.message, true); return; }
+      if (error){
+        say('DB error: ' + error.message, true);
+        return;
+      }
 
       $('genResult').style.display = 'block';
       $('newKeyValue').textContent = key;
@@ -441,7 +437,7 @@
       loadKeys(); loadStats();
 
     } catch (e){
-      say('Error: ' + (e.message || 'unknown'), true);
+      say('Network error: ' + (e.message || 'unknown'), true);
     } finally {
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Generate key';
@@ -453,16 +449,22 @@
     catch { say('Copy failed', true); }
   });
 
-  // ─── KEYS ───
   let allKeys = [];
   let currentFilter = 'all';
 
   async function loadKeys(){
-    const { data, error } = await SB.from('keys').select('*').order('created_at', { ascending:false }).limit(500);
-    if (error){ $('keysList').innerHTML = '<div class="empty">' + error.message + '</div>'; return; }
-    allKeys = data || [];
-    $('keyCount').textContent = '(' + allKeys.length + ')';
-    renderKeys(allKeys);
+    try {
+      const { data, error } = await SB.from('keys').select('*').order('created_at', { ascending:false }).limit(500);
+      if (error){
+        $('keysList').innerHTML = '<div class="empty">DB error: ' + error.message + '</div>';
+        return;
+      }
+      allKeys = data || [];
+      $('keyCount').textContent = '(' + allKeys.length + ')';
+      renderKeys(allKeys);
+    } catch (e){
+      $('keysList').innerHTML = '<div class="empty">Network error: ' + (e.message || 'unknown') + '</div>';
+    }
   }
 
   function filterList(list){
@@ -488,15 +490,14 @@
 
   function formatDuration(k){
     if (!k.expires_at){
-      if (k.expires_from === 'activation') return '5h after activation';
+      if (k.expires_from === 'activation') return 'starts at activation';
       return 'never';
     }
     const exp = new Date(k.expires_at);
-    const isActivation = k.expires_from === 'activation';
-    // duration display: compute original set duration if possible
-    // we don't store the original duration number, so just show the date + "from activation/generation"
-    const stamp = exp.toLocaleDateString() + ' ' + String(exp.getHours()).padStart(2,'0') + ':' + String(exp.getMinutes()).padStart(2,'0');
-    return stamp + (isActivation ? ' (from activation)' : '');
+    const stamp = exp.toLocaleDateString() + ' ' +
+      String(exp.getHours()).padStart(2,'0') + ':' +
+      String(exp.getMinutes()).padStart(2,'0');
+    return stamp + (k.expires_from === 'activation' ? ' (from activation)' : '');
   }
 
   function renderKeys(list){
@@ -550,9 +551,13 @@
 
       item.querySelector('[data-act="revoke"]').addEventListener('click', async ()=>{
         if (!confirm('Revoke ' + k + '?')) return;
-        await SB.from('keys').delete().eq('key', k);
-        say('Revoked');
-        loadKeys(); loadStats();
+        try {
+          await SB.from('keys').delete().eq('key', k);
+          say('Revoked');
+          loadKeys(); loadStats();
+        } catch (e){
+          say('Error: ' + (e.message || 'unknown'), true);
+        }
       });
     });
   }
@@ -567,46 +572,49 @@
     });
   });
 
-  // ─── STATS ───
   async function loadStats(){
-    const { data } = await SB.from('keys').select('*').limit(1000);
-    if (!data) return;
-    const now = Date.now();
-    let active=0, expired=0, bound=0, unused=0, fromPublic=0;
-    data.forEach(k=>{
-      const exp = k.expires_at ? new Date(k.expires_at).getTime() : null;
-      if (exp && exp < now) expired++;
-      else if (k.device_id) active++;
-      if (k.device_id) bound++; else unused++;
-      if ((k.note || '').toLowerCase().includes('public')) fromPublic++;
-    });
-    $('sTotal').textContent = data.length;
-    $('sActive').textContent = active;
-    $('sExpired').textContent = expired;
-    $('sBound').textContent = bound;
-    $('sUnused').textContent = unused;
-    $('sPublic').textContent = fromPublic;
+    try {
+      const { data } = await SB.from('keys').select('*').limit(1000);
+      if (!data) return;
+      const now = Date.now();
+      let active=0, expired=0, bound=0, unused=0, fromPublic=0;
+      data.forEach(k=>{
+        const exp = k.expires_at ? new Date(k.expires_at).getTime() : null;
+        if (exp && exp < now) expired++;
+        else if (k.device_id) active++;
+        if (k.device_id) bound++; else unused++;
+        if ((k.note || '').toLowerCase().includes('public')) fromPublic++;
+      });
+      $('sTotal').textContent = data.length;
+      $('sActive').textContent = active;
+      $('sExpired').textContent = expired;
+      $('sBound').textContent = bound;
+      $('sUnused').textContent = unused;
+      $('sPublic').textContent = fromPublic;
+    } catch (e){}
   }
 
-  // ─── ACTIVATIONS ───
   async function loadActivations(){
-    const { data } = await SB.from('activations').select('*').order('activated_at', { ascending:false }).limit(20);
-    if (!data || !data.length){ $('activationsList').innerHTML = '<div class="empty">No activations yet</div>'; return; }
-    $('activationsList').innerHTML = data.map(a=>{
-      const t = new Date(a.activated_at);
-      const when = t.toLocaleDateString() + ' ' + String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
-      return '<div class="key-item">' +
-        '<div class="row1"><div class="k" style="font-size:11.5px;">' + a.key + '</div></div>' +
-        '<div class="meta">' +
-          '<span class="lbl">Device</span> <span class="val">' + String(a.device_id || '').slice(0, 24) + '…</span>' +
-          '<span class="lbl">At</span> <span class="val">' + when + '</span>' +
-        '</div>' +
-      '</div>';
-    }).join('');
+    try {
+      const { data } = await SB.from('activations').select('*').order('activated_at', { ascending:false }).limit(20);
+      if (!data || !data.length){ $('activationsList').innerHTML = '<div class="empty">No activations yet</div>'; return; }
+      $('activationsList').innerHTML = data.map(a=>{
+        const t = new Date(a.activated_at);
+        const when = t.toLocaleDateString() + ' ' +
+          String(t.getHours()).padStart(2,'0') + ':' +
+          String(t.getMinutes()).padStart(2,'0');
+        return '<div class="key-item">' +
+          '<div class="row1"><div class="k" style="font-size:11.5px;">' + a.key + '</div></div>' +
+          '<div class="meta">' +
+            '<span class="lbl">Device</span> <span class="val">' + String(a.device_id || '').slice(0, 24) + '…</span>' +
+            '<span class="lbl">At</span> <span class="val">' + when + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } catch (e){}
   }
 
 })();
 </script>
-
 </body>
-</html>
+            </html>
