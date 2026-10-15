@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<title>Fearless Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:#00c853; --bright:#00e05e; --red:#ff4040; --amber:#ffb020; --blue:#4a9eff;
+    --bg:#0a0a0c; --text:#f5f5f7;
+    --dim:#8a8a8a; --faint:#565656;
+    --glass:rgba(255,255,255,.06);
+    --stroke:rgba(255,255,255,.1);
+    --spring:cubic-bezier(.34,1.56,.64,1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { background:#0a0a0c; }
+  body {
+    font-family:-apple-system, 'SF Pro Display', 'Sora', sans-serif;
+    color:var(--text); min-height:100dvh;
+    padding:20px 14px 60px;
+    display:flex; justify-content:center;
+    -webkit-font-smoothing:antialiased;
+    position:relative; overflow-x:hidden;
+  }
+  .bg { position:fixed; inset:-10%; z-index:-2; filter:blur(60px) saturate(150%);
+    background:
+      radial-gradient(50% 40% at 20% 20%, #8b5cf6 0%, transparent 70%),
+      radial-gradient(45% 35% at 80% 30%, #22d3ee 0%, transparent 65%),
+      radial-gradient(55% 50% at 30% 85%, #10b981 0%, transparent 70%);
+    animation:drift 30s ease-in-out infinite;
+  }
+  @keyframes drift { 0%,100% { transform:translate(0,0) scale(1.05); } 50% { transform:translate(2%,3%) scale(1.12); } }
+  .wrap { width:100%; max-width:560px; }
+
+  header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  header .logo {
+    width:40px; height:40px; border-radius:12px;
+    background:linear-gradient(135deg, rgba(0,200,83,.15), rgba(0,200,83,.05));
+    border:1px solid rgba(0,200,83,.35);
+    display:grid; place-items:center;
+    font-weight:800; color:var(--green); font-size:13px;
+  }
+  header h1 { font-size:16px; font-weight:700; letter-spacing:-.2px; }
+  header h1 span { color:var(--green); }
+  header .out {
+    margin-left:auto; padding:7px 12px; border-radius:9px;
+    background:rgba(255,255,255,.06); border:1px solid var(--stroke);
+    color:var(--dim); font-family:inherit; font-size:11.5px; font-weight:600;
+    cursor:pointer; transition:all .25s;
+  }
+  header .out:hover { color:var(--red); border-color:rgba(255,64,64,.4); }
+
+  .card {
+    background:var(--glass); border:1px solid var(--stroke);
+    border-radius:18px; padding:18px;
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
+    box-shadow:0 16px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1);
+    margin-bottom:14px;
+    animation:rise .6s var(--spring) both;
+  }
+  @keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+
+  .card h2 { font-size:13px; font-weight:700; margin-bottom:14px; color:#fff; letter-spacing:-.2px; }
+
+  .field { margin-bottom:12px; }
+  .field label { display:block; font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:6px; font-weight:600; }
+  .field input, .field select {
+    width:100%; padding:12px 14px;
+    background:rgba(0,0,0,.35);
+    border:1px solid var(--stroke);
+    border-radius:11px;
+    color:#fff; font-family:inherit; font-size:14px;
+    transition:all .25s;
+    -webkit-user-select:text; user-select:text;
+  }
+  .field input::placeholder { color:var(--faint); }
+  .field input:focus, .field select:focus {
+    outline:none; border-color:rgba(0,200,83,.5);
+    box-shadow:0 0 0 3px rgba(0,200,83,.12);
+  }
+
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+
+  .btn {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; padding:13px; border-radius:12px;
+    background:linear-gradient(135deg, #00e05e, #00c853);
+    color:#04120a; border:none;
+    font-family:inherit; font-size:14px; font-weight:700;
+    cursor:pointer; transition:all .3s var(--spring);
+    box-shadow:0 8px 22px rgba(0,224,94,.35), inset 0 1px 0 rgba(255,255,255,.35);
+    text-decoration:none;
+  }
+  .btn:hover { transform:translateY(-2px); }
+  .btn:active { transform:scale(.97); }
+  .btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+  .btn svg { width:15px; height:15px; stroke:currentColor; stroke-width:2.4; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+
+  .btn-ghost {
+    background:rgba(255,255,255,.06); color:#ccc;
+    border:1px solid var(--stroke); box-shadow:none;
+  }
+  .btn-ghost:hover { color:var(--bright); border-color:rgba(0,200,83,.35); }
+
+  .btn-sm {
+    padding:7px 11px; border-radius:8px;
+    background:rgba(255,255,255,.05); border:1px solid var(--stroke);
+    color:var(--dim); font-family:inherit; font-size:11px; font-weight:600;
+    cursor:pointer; transition:all .2s;
+    white-space:nowrap;
+  }
+  .btn-sm:hover { color:var(--bright); border-color:rgba(0,200,83,.35); }
+  .btn-sm.danger:hover { color:var(--red); border-color:rgba(255,64,64,.4); }
+
+  .key-item {
+    display:flex; align-items:center; gap:10px;
+    padding:12px 14px; margin-bottom:8px;
+    background:rgba(0,0,0,.28);
+    border:1px solid var(--stroke);
+    border-radius:12px;
+    animation:rise .4s var(--spring) both;
+  }
+  .key-item .info { flex:1; min-width:0; }
+  .key-item .k {
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px; color:var(--bright);
+    word-break:break-all;
+    -webkit-user-select:all; user-select:all;
+  }
+  .key-item .meta {
+    font-size:10.5px; color:var(--faint); margin-top:4px;
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  }
+  .key-item .actions { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+
+  .badge {
+    padding:2px 7px; border-radius:8px;
+    font-size:9px; font-weight:700; letter-spacing:.5px;
+    text-transform:uppercase;
+  }
+  .badge.active { background:rgba(0,200,83,.15); color:var(--bright); }
+  .badge.expired { background:rgba(255,64,64,.12); color:var(--red); }
+  .badge.ready { background:rgba(255,176,32,.12); color:var(--amber); }
+  .badge.bound { background:rgba(74,158,255,.14); color:var(--blue); }
+  .badge.public { background:rgba(139,92,246,.15); color:#a78bfa; }
+  .badge.admin { background:rgba(74,158,255,.14); color:var(--blue); }
+
+  .empty { text-align:center; padding:22px; color:var(--faint); font-size:12.5px; }
+
+  .tabs { display:flex; gap:6px; margin-bottom:16px; }
+  .tabs button {
+    flex:1; padding:10px; border-radius:11px;
+    background:rgba(255,255,255,.04); border:1px solid var(--stroke);
+    color:var(--dim); font-family:inherit; font-size:12px; font-weight:600;
+    cursor:pointer; transition:all .25s;
+  }
+  .tabs button.active { background:rgba(0,200,83,.12); color:var(--bright); border-color:rgba(0,200,83,.3); }
+
+  .stat-grid {
+    display:grid; grid-template-columns:repeat(3, 1fr);
+    gap:8px; margin-bottom:14px;
+  }
+  .stat {
+    padding:12px 8px; text-align:center;
+    background:rgba(0,0,0,.28); border:1px solid var(--stroke);
+    border-radius:12px;
+  }
+  .stat b { display:block; font-family:'JetBrains Mono', monospace; font-size:18px; color:var(--bright); font-weight:700; }
+  .stat span { font-size:9.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.6px; }
+
+  .toast {
+    position:fixed; bottom:24px; left:50%;
+    transform:translateX(-50%) translateY(80px);
+    background:#141414; color:var(--bright);
+    padding:11px 22px; border-radius:30px;
+    font-size:12.5px; font-weight:600;
+    border:1px solid rgba(0,200,83,.3);
+    z-index:999; opacity:0;
+    transition:all .35s var(--spring);
+    pointer-events:none;
+    max-width:80vw; text-align:center;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+  .toast.error { color:var(--red); border-color:rgba(255,64,64,.35); }
+
+  #login { max-width:400px; margin:auto; }
+  #login h2 { font-size:16px; margin-bottom:6px; }
+  #login p { font-size:12px; color:var(--dim); margin-bottom:16px; }
+
+  .key-display {
+    background:linear-gradient(135deg, rgba(0,200,83,.15), rgba(0,200,83,.05));
+    border:1px solid rgba(0,200,83,.4);
+    border-radius:14px; padding:18px 16px;
+    text-align:center; margin-bottom:14px;
+  }
+  .key-display .lbl { font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:1.4px; margin-bottom:10px; font-weight:600; }
+  .key-display .key {
+    font-family:'JetBrains Mono', monospace;
+    font-size:16px; font-weight:700; color:#fff;
+    word-break:break-all; line-height:1.4;
+    -webkit-user-select:all; user-select:all;
+  }
+  .key-display .expires { font-size:11px; color:var(--faint); margin-top:10px; font-family:'JetBrains Mono', monospace; }
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <div id="login" style="display:none;">
+    <div class="card">
+      <h2>Admin login</h2>
+      <p>Sign in with your Supabase account to manage keys.</p>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="email" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" autocomplete="current-password">
+      </div>
+      <button class="btn" id="loginBtn">Sign in</button>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div id="panel" style="display:none;">
+    <header>
+      <div class="logo">FF</div>
+      <div><h1>Fearless <span>Admin</span></h1></div>
+      <button class="out" id="logoutBtn">Sign out</button>
+    </header>
+
+    <div class="tabs">
+      <button class="active" data-tab="generate">Generate</button>
+      <button data-tab="keys">Keys</button>
+      <button data-tab="stats">Stats</button>
+    </div>
+
+    <!-- GENERATE -->
+    <div class="tab-panel" id="tab-generate">
+      <div class="card">
+        <h2>Generate new key</h2>
+
+        <div class="field">
+          <label>Note (buyer name / purpose)</label>
+          <input type="text" id="genNote" placeholder="e.g. Micheal — paid customer">
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Duration</label>
+            <select id="genDays">
+              <option value="0.2083">5 hours</option>
+              <option value="1">1 day</option>
+              <option value="3">3 days</option>
+              <option value="7" selected>7 days</option>
+              <option value="30">30 days</option>
+              <option value="90">90 days</option>
+              <option value="365">1 year</option>
+              <option value="0">Never expires</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Expiry starts from</label>
+            <select id="genFrom">
+              <option value="generation" selected>Generation</option>
+              <option value="activation">Activation</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Product</label>
+            <select id="genProduct">
+              <option value="vip" selected>VIP</option>
+              <option value="pro">Pro</option>
+              <option value="elite">Elite</option>
+              <option value="test">Test</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Bind device?</label>
+            <select id="genBind">
+              <option value="0" selected>No — first device claims</option>
+              <option value="1">Yes — paste device ID</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" id="deviceField" style="display:none;">
+          <label>Device fingerprint</label>
+          <input type="text" id="genDevice" placeholder="fe-ffh4x-...">
+        </div>
+
+        <button class="btn" id="genBtn">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Generate key
+        </button>
+      </div>
+
+      <div class="card" id="genResult" style="display:none;">
+        <h2>Generated key</h2>
+        <div class="key-display">
+          <div class="lbl">Access Key</div>
+          <div class="key" id="newKeyValue">—</div>
+          <div class="expires" id="newKeyMeta">—</div>
+        </div>
+        <button class="btn" id="copyNewKey">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy key
+        </button>
+        <a class="btn btn-ghost" id="waSend" target="_blank" style="margin-top:10px;">
+          <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Send via WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <!-- KEYS -->
+    <div class="tab-panel" id="tab-keys" style="display:none;">
+      <div class="card">
+        <h2>All keys <span id="keyCount" style="color:var(--faint);font-weight:400;font-size:11px;"></span></h2>
+
+        <div class="field" style="margin-bottom:10px;">
+          <input type="text" id="searchKeys" placeholder="Search key / note / device…">
+        </div>
+
+        <div class="row3" style="margin-bottom:12px;">
+          <button class="btn-sm" data-filter="all" style="padding:9px;">All</button>
+          <button class="btn-sm" data-filter="active" style="padding:9px;">Active</button>
+          <button class="btn-sm" data-filter="unused" style="padding:9px;">Unused</button>
+        </div>
+
+        <div id="keysList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="tab-panel" id="tab-stats" style="display:none;">
+      <div class="card">
+        <h2>Overview</h2>
+        <div class="stat-grid">
+          <div class="stat"><b id="sTotal">—</b><span>Total keys</span></div>
+          <div class="stat"><b id="sActive">—</b><span>Active</span></div>
+          <div class="stat"><b id="sExpired">—</b><span>Expired</span></div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><b id="sBound">—</b><span>Bound</span></div>
+          <div class="stat"><b id="sUnused">—</b><span>Unused</span></div>
+          <div class="stat"><b id="sPublic">—</b><span>From public</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Recent activations</h2>
+        <div id="activationsList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const toast = $('toast');
+  let tt;
+  function say(msg, err){
+    toast.textContent = msg;
+    toast.classList.toggle('error', !!err);
+    toast.classList.add('show');
+    clearTimeout(tt);
+    tt = setTimeout(()=>toast.classList.remove('show'), 2200);
+  }
+
+  // ─── SUPABASE ───
+  const SUPABASE_URL = 'https://nvrjvcwhyeeloblaozuh.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52cmp2Y3doeWVlbGVibGFvenVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwODk5NzUsImV4cCI6MjEwNzY2NTk3NX0.MgH5AP8Vqr0ZAA8GgdsIRMsrRVOg3hTF_C9bsT8rDAw';
+  const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function makeKey(){
+    const part = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+    return 'FEARLESS-FFH4X-' + part() + '-' + part();
+  }
+
+  // ─── AUTH ───
+  async function checkSession(){
+    const { data } = await SB.auth.getSession();
+    if (data.session) showPanel(); else showLogin();
+  }
+  function showLogin(){ $('login').style.display = 'block'; $('panel').style.display = 'none'; }
+  function showPanel(){
+    $('login').style.display = 'none';
+    $('panel').style.display = 'block';
+    loadKeys(); loadStats(); loadActivations();
+  }
+
+  $('loginBtn').addEventListener('click', async ()=>{
+    const email = $('email').value.trim();
+    const password = $('password').value;
+    if (!email || !password) return say('Fill both fields', true);
+    const { error } = await SB.auth.signInWithPassword({ email, password });
+    if (error) return say(error.message, true);
+    say('Signed in'); showPanel();
+  });
+
+  $('logoutBtn').addEventListener('click', async ()=>{
+    await SB.auth.signOut();
+    showLogin();
+  });
+
+  checkSession();
+
+  // ─── TABS ───
+  document.querySelectorAll('.tabs button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(x=>x.style.display = 'none');
+      b.classList.add('active');
+      $('tab-' + b.dataset.tab).style.display = 'block';
+    });
+  });
+
+  // ─── BIND TOGGLE ───
+  $('genBind').addEventListener('change', ()=>{
+    $('deviceField').style.display = $('genBind').value === '1' ? 'block' : 'none';
+  });
+
+  // ─── GENERATE ───
+  $('genBtn').addEventListener('click', async ()=>{
+    const note = $('genNote').value.trim() || null;
+    const days = parseFloat($('genDays').value);
+    const from = $('genFrom').value;
+    const product = $('genProduct').value;
+    const bind = $('genBind').value === '1';
+    const device = bind ? $('genDevice').value.trim() : null;
+
+    if (bind && !device) return say('Enter the device fingerprint', true);
+
+    const key = makeKey();
+
+    // calculate expiry
+    let expiresAt = null;
+    if (days > 0){
+      if (from === 'generation'){
+        expiresAt = new Date(Date.now() + days * 86400000).toISOString();
+      }
+      // if from === 'activation', leave null — activation page sets it
+    }
+
+    $('genBtn').disabled = true;
+    $('genBtn').textContent = 'Generating…';
+
+    const { error } = await SB.from('keys').insert({
+      key,
+      product,
+      device_id: device,
+      used: !!device,
+      expires_at: expiresAt,
+      expires_from: from,
+      note
+    });
+
+    $('genBtn').disabled = false;
+    $('genBtn').innerHTML = '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Generate key';
+
+    if (error) return say(error.message, true);
+
+    // try to log the admin action
+    try { await SB.from('admin_log').insert({ action:'generate', target:key }); } catch {}
+
+    $('genResult').style.display = 'block';
+    $('newKeyValue').textContent = key;
+
+    let expText;
+    if (days === 0) expText = 'Never expires';
+    else if (from === 'generation') expText = 'Expires ' + new Date(expiresAt).toLocaleString();
+    else expText = 'Expires ' + days + ' day' + (days===1?'':'s') + ' after activation';
+
+    const devText = device ? ('· Bound to ' + device.slice(0,14) + '…') : '· Unbound';
+    $('newKeyMeta').textContent = expText + ' ' + devText;
+
+    $('waSend').href = 'https://wa.me/?text=' + encodeURIComponent(
+      'Your Fearless FFH4X key:\n\n' + key + '\n\n' +
+      (days === 0 ? 'Never expires' : (from === 'generation' ? 'Expires: ' + new Date(expiresAt).toLocaleString() : 'Valid for ' + days + ' day(s) after activation')) +
+      '\n\nActivate at: https://fearlesskeys.netlify.app/activate.html'
+    );
+
+    say('Key generated');
+    loadKeys(); loadStats();
+  });
+
+  $('copyNewKey').addEventListener('click', async ()=>{
+    try {
+      await navigator.clipboard.writeText($('newKeyValue').textContent);
+      say('Key copied');
+    } catch { say('Copy failed', true); }
+  });
+
+  // ─── KEYS LIST ───
+  let allKeys = [];
+  let currentFilter = 'all';
+
+  async function loadKeys(){
+    const { data, error } = await SB.from('keys').select('*').order('created_at', { ascending:false }).limit(500);
+    if (error){ $('keysList').innerHTML = '<div class="empty">' + error.message + '</div>'; return; }
+    allKeys = data || [];
+    $('keyCount').textContent = '(' + allKeys.length + ')';
+    renderKeys(allKeys);
+  }
+
+  function filterList(list){
+    const q = $('searchKeys').value.trim().toLowerCase();
+    let out = list;
+
+    if (currentFilter === 'active'){
+      out = out.filter(k => {
+        const exp = k.expires_at ? new Date(k.expires_at).getTime() : null;
+        return exp && exp > Date.now() && k.device_id;
+      });
+    } else if (currentFilter === 'unused'){
+      out = out.filter(k => !k.device_id);
+    }
+
+    if (q){
+      out = out.filter(k =>
+        k.key.toLowerCase().includes(q) ||
+        (k.note || '').toLowerCase().includes(q) ||
+        (k.device_id || '').toLowerCase().includes(q)
+      );
+    }
+    return out;
+  }
+
+  function renderKeys(list){
+    const el = $('keysList');
+    const filtered = filterList(list);
+    if (!filtered.length){ el.innerHTML = '<div class="empty">No keys match</div>'; return; }
+
+    el.innerHTML = filtered.map(k => {
+      const now = Date.now();
+      const exp = k.expires_at ? new Date(k.expires_at) : null;
+      const expired = exp && exp.getTime() < now;
+      const bound = !!k.device_id;
+      const fromPublic = (k.note || '').toLowerCase().includes('public') || (k.note || '').toLowerCase().includes('auto-issued');
+
+      let badgeClass = 'ready', badgeText = 'Ready';
+      if (expired){ badgeClass = 'expired'; badgeText = 'Expired'; }
+      else if (bound && exp){ badgeClass = 'active'; badgeText = 'Active'; }
+      else if (bound){ badgeClass = 'bound'; badgeText = 'Bound'; }
+      else if (exp){ badgeClass = 'ready'; badgeText = 'Ready'; }
+
+      const expText = exp ? exp.toLocaleDateString() + ' ' + exp.getHours() + ':' + String(exp.getMinutes()).padStart(2,'0') : '—';
+      const sourceBadge = fromPublic ? '<span class="badge public">Public</span>' : '<span class="badge admin">Admin</span>';
+
+      return '<div class="key-item" data-key="' + encodeURIComponent(k.key) + '">' +
+        '<div class="info">' +
+          '<div class="k">' + k.key + '</div>' +
+          '<div class="meta">' +
+            '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
+            sourceBadge +
+            '<span>' + (bound ? 'Bound' : 'Unbound') + '</span>' +
+            '<span>Exp ' + expText + '</span>' +
+            (k.note ? '<span>' + String(k.note).slice(0, 40) + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="actions">' +
+          '<button class="btn-sm" data-act="copy">Copy</button>' +
+          '<button class="btn-sm" data-act="extend">+7d</button>' +
+          '<button class="btn-sm danger" data-act="revoke">Kill</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    el.querySelectorAll('.key-item').forEach(item=>{
+      const k = decodeURIComponent(item.dataset.key);
+      const record = allKeys.find(x => x.key === k);
+
+      item.querySelector('[data-act="copy"]').addEventListener('click', async ()=>{
+        try { await navigator.clipboard.writeText(k); say('Copied'); } catch {}
+      });
+
+      item.querySelector('[data-act="extend"]').addEventListener('click', async ()=>{
+        const base = record.expires_at && new Date(record.expires_at).getTime() > Date.now()
+          ? new Date(record.expires_at).getTime()
+          : Date.now();
+        const next = new Date(base + 7 * 86400000).toISOString();
+        await SB.from('keys').update({ expires_at: next }).eq('key', k);
+        try { await SB.from('admin_log').insert({ action:'extend', target:k }); } catch {}
+        say('Extended 7 days');
+        loadKeys();
+      });
+
+      item.querySelector('[data-act="revoke"]').addEventListener('click', async ()=>{
+        if (!confirm('Revoke ' + k + '?\n\nThis deletes the key. The device will need a new one.')) return;
+        await SB.from('keys').delete().eq('key', k);
+        try { await SB.from('admin_log').insert({ action:'revoke', target:k }); } catch {}
+        say('Revoked');
+        loadKeys(); loadStats();
+      });
+    });
+  }
+
+  $('searchKeys').addEventListener('input', ()=> renderKeys(allKeys));
+  document.querySelectorAll('[data-filter]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('[data-filter]').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      currentFilter = b.dataset.filter;
+      renderKeys(allKeys);
+    });
+  });
+
+  // ─── STATS ───
+  async function loadStats(){
+    const { data } = await SB.from('keys').select('*').limit(1000);
+    if (!data) return;
+    const now = Date.now();
+    let active=0, expired=0, bound=0, unused=0, fromPublic=0;
+    data.forEach(k=>{
+      const exp = k.expires_at ? new Date(k.expires_at).getTime() : null;
+      if (exp && exp < now) expired++;
+      else if (k.device_id) active++;
+      if (k.device_id) bound++; else unused++;
+      if ((k.note || '').toLowerCase().includes('public') || (k.note || '').toLowerCase().includes('auto-issued')) fromPublic++;
+    });
+    $('sTotal').textContent = data.length;
+    $('sActive').textContent = active;
+    $('sExpired').textContent = expired;
+    $('sBound').textContent = bound;
+    $('sUnused').textContent = unused;
+    $('sPublic').textContent = fromPublic;
+  }
+
+  // ─── ACTIVATIONS ───
+  async function loadActivations(){
+    const { data } = await SB.from('activations').select('*').order('activated_at', { ascending:false }).limit(20);
+    if (!data || !data.length){ $('activationsList').innerHTML = '<div class="empty">No activations yet</div>'; return; }
+    $('activationsList').innerHTML = data.map(a=>{
+      const t = new Date(a.activated_at);
+      const when = t.toLocaleDateString() + ' ' + t.getHours() + ':' + String(t.getMinutes()).padStart(2,'0');
+      return '<div class="key-item">' +
+        '<div class="info">' +
+          '<div class="k" style="font-size:11.5px;">' + a.key + '</div>' +
+          '<div class="meta">' +
+            '<span>' + String(a.device_id || '').slice(0, 24) + '…</span>' +
+            '<span>' + when + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+})();
+</script>
+
+</body>
+  </html>
