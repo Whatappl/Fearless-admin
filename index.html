@@ -336,7 +336,7 @@
         </div>
 
         <div class="row3" style="margin-bottom:12px;">
-          <button class="btn-sm" data-filter="all" style="padding:9px;">All</button>
+          <button class="btn-sm active" data-filter="all" style="padding:9px;">All</button>
           <button class="btn-sm" data-filter="active" style="padding:9px;">Active</button>
           <button class="btn-sm" data-filter="unused" style="padding:9px;">Unused</button>
         </div>
@@ -381,10 +381,9 @@
     toast.classList.toggle('error', !!err);
     toast.classList.add('show');
     clearTimeout(tt);
-    tt = setTimeout(()=>toast.classList.remove('show'), 2200);
+    tt = setTimeout(()=>toast.classList.remove('show'), 2400);
   }
 
-  // ─── SUPABASE ───
   const SUPABASE_URL = 'https://nvrjvcwhyeeloblaozuh.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52cmp2Y3doeWVlbGVibGFvenVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwODk5NzUsImV4cCI6MjEwNzY2NTk3NX0.MgH5AP8Vqr0ZAA8GgdsIRMsrRVOg3hTF_C9bsT8rDAw';
   const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -392,7 +391,6 @@
   const SALT = 'fe-ffh4x-salt';
   const SESSION_KEY = 'ffh4x_admin_session';
 
-  // ─── HASH ───
   async function sha256Hex(text){
     const buf = new TextEncoder().encode(text);
     const hash = await crypto.subtle.digest('SHA-256', buf);
@@ -405,57 +403,57 @@
   }
 
   // ─── AUTH ───
-  function checkSession(){
-    try {
-      const s = localStorage.getItem(SESSION_KEY);
-      if (s === 'ok') showPanel(); else showLogin();
-    } catch { showLogin(); }
+  function showLogin(){
+    $('login').style.display = 'block';
+    $('panel').style.display = 'none';
   }
-  function showLogin(){ $('login').style.display = 'block'; $('panel').style.display = 'none'; }
   function showPanel(){
     $('login').style.display = 'none';
     $('panel').style.display = 'block';
     loadKeys(); loadStats(); loadActivations();
   }
 
-  $('loginBtn').addEventListener('click', async ()=>{
+  let sessionOk = false;
+  try { sessionOk = localStorage.getItem(SESSION_KEY) === 'ok'; } catch {}
+  if (sessionOk) showPanel(); else showLogin();
+
+  async function doLogin(){
     const username = $('username').value.trim();
     const password = $('password').value;
-    if (!username || !password) return say('Fill both fields', true);
 
-    $('loginBtn').disabled = true;
-    $('loginBtn').textContent = 'Checking…';
+    if (!username || !password){
+      say('Fill both fields', true);
+      return;
+    }
+
+    const btn = $('loginBtn');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
 
     try {
-      // fetch the stored hash for this username
-      const { data, error } = await SB.from('admins')
+      // fetch the stored hash — RLS allows anon read
+      const { data, error } = await SB
+        .from('admins')
         .select('password_hash')
         .eq('username', username)
         .limit(1);
 
-      if (error || !data || !data.length){
-        say('Invalid credentials', true);
-        $('loginBtn').disabled = false;
-        $('loginBtn').textContent = 'Sign in';
+      if (error){
+        say('DB error: ' + error.message, true);
         return;
       }
 
-      // hash what they typed with the same salt
-      const typedHash = await sha256Hex(password + ':' + SALT);
-      const storedHash = data[0].password_hash;
-
-      // constant-time-ish compare
-      let match = typedHash.length === storedHash.length;
-      if (match){
-        for (let i = 0; i < typedHash.length; i++){
-          if (typedHash[i] !== storedHash[i]) match = false;
-        }
+      if (!data || data.length === 0){
+        say('Username not found', true);
+        return;
       }
 
-      if (!match){
-        say('Invalid credentials', true);
-        $('loginBtn').disabled = false;
-        $('loginBtn').textContent = 'Sign in';
+      const storedHash = String(data[0].password_hash).trim().toLowerCase();
+      const typedHash  = await sha256Hex(password + ':' + SALT);
+
+      if (typedHash !== storedHash){
+        say('Wrong password', true);
         return;
       }
 
@@ -465,23 +463,23 @@
       showPanel();
 
     } catch (e){
-      say('Login error: ' + e.message, true);
-      $('loginBtn').disabled = false;
-      $('loginBtn').textContent = 'Sign in';
+      say('Error: ' + (e.message || 'unknown'), true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
     }
-  });
+  }
 
-  // enter key support on login
-  $('password').addEventListener('keydown', e=>{
-    if (e.key === 'Enter') $('loginBtn').click();
-  });
+  $('loginBtn').addEventListener('click', doLogin);
+  $('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  $('username').addEventListener('keydown', e => { if (e.key === 'Enter') $('password').focus(); });
 
   $('logoutBtn').addEventListener('click', ()=>{
     try { localStorage.removeItem(SESSION_KEY); } catch {}
+    $('username').value = '';
+    $('password').value = '';
     showLogin();
   });
-
-  checkSession();
 
   // ─── TABS ───
   document.querySelectorAll('.tabs button').forEach(b=>{
@@ -516,46 +514,55 @@
       expiresAt = new Date(Date.now() + days * 86400000).toISOString();
     }
 
-    $('genBtn').disabled = true;
-    $('genBtn').textContent = 'Generating…';
+    const btn = $('genBtn');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
 
-    const { error } = await SB.from('keys').insert({
-      key,
-      product,
-      device_id: device,
-      used: !!device,
-      expires_at: expiresAt,
-      expires_from: from,
-      note
-    });
+    try {
+      const { error } = await SB.from('keys').insert({
+        key,
+        product,
+        device_id: device,
+        used: !!device,
+        expires_at: expiresAt,
+        expires_from: from,
+        note
+      });
 
-    $('genBtn').disabled = false;
-    $('genBtn').innerHTML = '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Generate key';
+      if (error){
+        say(error.message, true);
+        return;
+      }
 
-    if (error) return say(error.message, true);
+      $('genResult').style.display = 'block';
+      $('newKeyValue').textContent = key;
 
-    $('genResult').style.display = 'block';
-    $('newKeyValue').textContent = key;
+      let expText;
+      if (days === 0) expText = 'Never expires';
+      else if (from === 'generation') expText = 'Expires ' + new Date(expiresAt).toLocaleString();
+      else {
+        const h = days * 24;
+        expText = 'Expires ' + (h < 24 ? h + ' hour' + (h === 1 ? '' : 's') : days + ' day' + (days === 1 ? '' : 's')) + ' after activation';
+      }
 
-    let expText;
-    if (days === 0) expText = 'Never expires';
-    else if (from === 'generation') expText = 'Expires ' + new Date(expiresAt).toLocaleString();
-    else {
-      const h = days * 24;
-      expText = 'Expires ' + (h < 24 ? h + ' hour' + (h===1?'':'s') : days + ' day' + (days===1?'':'s')) + ' after activation';
+      const devText = device ? ('· Bound to ' + device.slice(0,14) + '…') : '· Unbound';
+      $('newKeyMeta').textContent = expText + ' ' + devText;
+
+      $('waSend').href = 'https://wa.me/?text=' + encodeURIComponent(
+        'Your Fearless FFH4X key:\n\n' + key + '\n\n' + expText +
+        '\n\nActivate at: https://fearlesskeys.netlify.app/activate.html'
+      );
+
+      say('Key generated');
+      loadKeys(); loadStats();
+
+    } catch (e){
+      say('Error: ' + (e.message || 'unknown'), true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
     }
-
-    const devText = device ? ('· Bound to ' + device.slice(0,14) + '…') : '· Unbound';
-    $('newKeyMeta').textContent = expText + ' ' + devText;
-
-    $('waSend').href = 'https://wa.me/?text=' + encodeURIComponent(
-      'Your Fearless FFH4X key:\n\n' + key + '\n\n' +
-      expText +
-      '\n\nActivate at: https://fearlesskeys.netlify.app/activate.html'
-    );
-
-    say('Key generated');
-    loadKeys(); loadStats();
   });
 
   $('copyNewKey').addEventListener('click', async ()=>{
@@ -565,12 +572,13 @@
     } catch { say('Copy failed', true); }
   });
 
-  // ─── KEYS LIST ───
+  // ─── KEYS ───
   let allKeys = [];
   let currentFilter = 'all';
 
   async function loadKeys(){
-    const { data, error } = await SB.from('keys').select('*').order('created_at', { ascending:false }).limit(500);
+    const { data, error } = await SB.from('keys')
+      .select('*').order('created_at', { ascending:false }).limit(500);
     if (error){ $('keysList').innerHTML = '<div class="empty">' + error.message + '</div>'; return; }
     allKeys = data || [];
     $('keyCount').textContent = '(' + allKeys.length + ')';
@@ -658,7 +666,7 @@
       });
 
       item.querySelector('[data-act="revoke"]').addEventListener('click', async ()=>{
-        if (!confirm('Revoke ' + k + '?\n\nThe device will need a new key.')) return;
+        if (!confirm('Revoke ' + k + '?')) return;
         await SB.from('keys').delete().eq('key', k);
         say('Revoked');
         loadKeys(); loadStats();
@@ -720,4 +728,4 @@
 </script>
 
 </body>
-          </html>
+</html>
