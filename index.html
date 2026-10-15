@@ -117,6 +117,7 @@
   }
   .btn-sm:hover { color:var(--bright); border-color:rgba(0,200,83,.35); }
   .btn-sm.danger:hover { color:var(--red); border-color:rgba(255,64,64,.4); }
+  .btn-sm.active { color:var(--bright); border-color:rgba(0,200,83,.4); background:rgba(0,200,83,.1); }
 
   .key-item {
     display:flex; align-items:center; gap:10px;
@@ -219,10 +220,10 @@
   <div id="login" style="display:none;">
     <div class="card">
       <h2>Admin login</h2>
-      <p>Sign in with your Supabase account to manage keys.</p>
+      <p>Enter your credentials to manage keys.</p>
       <div class="field">
-        <label>Email</label>
-        <input type="email" id="email" autocomplete="username">
+        <label>Username</label>
+        <input type="text" id="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
       </div>
       <div class="field">
         <label>Password</label>
@@ -246,14 +247,13 @@
       <button data-tab="stats">Stats</button>
     </div>
 
-    <!-- GENERATE -->
     <div class="tab-panel" id="tab-generate">
       <div class="card">
         <h2>Generate new key</h2>
 
         <div class="field">
           <label>Note (buyer name / purpose)</label>
-          <input type="text" id="genNote" placeholder="e.g. Micheal — paid customer">
+          <input type="text" id="genNote" placeholder="e.g. Micheal — Tecno Spark">
         </div>
 
         <div class="row">
@@ -327,7 +327,6 @@
       </div>
     </div>
 
-    <!-- KEYS -->
     <div class="tab-panel" id="tab-keys" style="display:none;">
       <div class="card">
         <h2>All keys <span id="keyCount" style="color:var(--faint);font-weight:400;font-size:11px;"></span></h2>
@@ -346,7 +345,6 @@
       </div>
     </div>
 
-    <!-- STATS -->
     <div class="tab-panel" id="tab-stats" style="display:none;">
       <div class="card">
         <h2>Overview</h2>
@@ -391,15 +389,27 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52cmp2Y3doeWVlbGVibGFvenVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwODk5NzUsImV4cCI6MjEwNzY2NTk3NX0.MgH5AP8Vqr0ZAA8GgdsIRMsrRVOg3hTF_C9bsT8rDAw';
   const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  const SALT = 'fe-ffh4x-salt';
+  const SESSION_KEY = 'ffh4x_admin_session';
+
+  // ─── HASH ───
+  async function sha256Hex(text){
+    const buf = new TextEncoder().encode(text);
+    const hash = await crypto.subtle.digest('SHA-256', buf);
+    return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
   function makeKey(){
     const part = () => Math.random().toString(36).substring(2, 6).toUpperCase();
     return 'FEARLESS-FFH4X-' + part() + '-' + part();
   }
 
   // ─── AUTH ───
-  async function checkSession(){
-    const { data } = await SB.auth.getSession();
-    if (data.session) showPanel(); else showLogin();
+  function checkSession(){
+    try {
+      const s = localStorage.getItem(SESSION_KEY);
+      if (s === 'ok') showPanel(); else showLogin();
+    } catch { showLogin(); }
   }
   function showLogin(){ $('login').style.display = 'block'; $('panel').style.display = 'none'; }
   function showPanel(){
@@ -409,16 +419,65 @@
   }
 
   $('loginBtn').addEventListener('click', async ()=>{
-    const email = $('email').value.trim();
+    const username = $('username').value.trim();
     const password = $('password').value;
-    if (!email || !password) return say('Fill both fields', true);
-    const { error } = await SB.auth.signInWithPassword({ email, password });
-    if (error) return say(error.message, true);
-    say('Signed in'); showPanel();
+    if (!username || !password) return say('Fill both fields', true);
+
+    $('loginBtn').disabled = true;
+    $('loginBtn').textContent = 'Checking…';
+
+    try {
+      // fetch the stored hash for this username
+      const { data, error } = await SB.from('admins')
+        .select('password_hash')
+        .eq('username', username)
+        .limit(1);
+
+      if (error || !data || !data.length){
+        say('Invalid credentials', true);
+        $('loginBtn').disabled = false;
+        $('loginBtn').textContent = 'Sign in';
+        return;
+      }
+
+      // hash what they typed with the same salt
+      const typedHash = await sha256Hex(password + ':' + SALT);
+      const storedHash = data[0].password_hash;
+
+      // constant-time-ish compare
+      let match = typedHash.length === storedHash.length;
+      if (match){
+        for (let i = 0; i < typedHash.length; i++){
+          if (typedHash[i] !== storedHash[i]) match = false;
+        }
+      }
+
+      if (!match){
+        say('Invalid credentials', true);
+        $('loginBtn').disabled = false;
+        $('loginBtn').textContent = 'Sign in';
+        return;
+      }
+
+      // success
+      try { localStorage.setItem(SESSION_KEY, 'ok'); } catch {}
+      say('Signed in');
+      showPanel();
+
+    } catch (e){
+      say('Login error: ' + e.message, true);
+      $('loginBtn').disabled = false;
+      $('loginBtn').textContent = 'Sign in';
+    }
   });
 
-  $('logoutBtn').addEventListener('click', async ()=>{
-    await SB.auth.signOut();
+  // enter key support on login
+  $('password').addEventListener('keydown', e=>{
+    if (e.key === 'Enter') $('loginBtn').click();
+  });
+
+  $('logoutBtn').addEventListener('click', ()=>{
+    try { localStorage.removeItem(SESSION_KEY); } catch {}
     showLogin();
   });
 
@@ -452,13 +511,9 @@
 
     const key = makeKey();
 
-    // calculate expiry
     let expiresAt = null;
-    if (days > 0){
-      if (from === 'generation'){
-        expiresAt = new Date(Date.now() + days * 86400000).toISOString();
-      }
-      // if from === 'activation', leave null — activation page sets it
+    if (days > 0 && from === 'generation'){
+      expiresAt = new Date(Date.now() + days * 86400000).toISOString();
     }
 
     $('genBtn').disabled = true;
@@ -479,23 +534,23 @@
 
     if (error) return say(error.message, true);
 
-    // try to log the admin action
-    try { await SB.from('admin_log').insert({ action:'generate', target:key }); } catch {}
-
     $('genResult').style.display = 'block';
     $('newKeyValue').textContent = key;
 
     let expText;
     if (days === 0) expText = 'Never expires';
     else if (from === 'generation') expText = 'Expires ' + new Date(expiresAt).toLocaleString();
-    else expText = 'Expires ' + days + ' day' + (days===1?'':'s') + ' after activation';
+    else {
+      const h = days * 24;
+      expText = 'Expires ' + (h < 24 ? h + ' hour' + (h===1?'':'s') : days + ' day' + (days===1?'':'s')) + ' after activation';
+    }
 
     const devText = device ? ('· Bound to ' + device.slice(0,14) + '…') : '· Unbound';
     $('newKeyMeta').textContent = expText + ' ' + devText;
 
     $('waSend').href = 'https://wa.me/?text=' + encodeURIComponent(
       'Your Fearless FFH4X key:\n\n' + key + '\n\n' +
-      (days === 0 ? 'Never expires' : (from === 'generation' ? 'Expires: ' + new Date(expiresAt).toLocaleString() : 'Valid for ' + days + ' day(s) after activation')) +
+      expText +
       '\n\nActivate at: https://fearlesskeys.netlify.app/activate.html'
     );
 
@@ -555,13 +610,12 @@
       const exp = k.expires_at ? new Date(k.expires_at) : null;
       const expired = exp && exp.getTime() < now;
       const bound = !!k.device_id;
-      const fromPublic = (k.note || '').toLowerCase().includes('public') || (k.note || '').toLowerCase().includes('auto-issued');
+      const fromPublic = (k.note || '').toLowerCase().includes('public');
 
       let badgeClass = 'ready', badgeText = 'Ready';
       if (expired){ badgeClass = 'expired'; badgeText = 'Expired'; }
       else if (bound && exp){ badgeClass = 'active'; badgeText = 'Active'; }
       else if (bound){ badgeClass = 'bound'; badgeText = 'Bound'; }
-      else if (exp){ badgeClass = 'ready'; badgeText = 'Ready'; }
 
       const expText = exp ? exp.toLocaleDateString() + ' ' + exp.getHours() + ':' + String(exp.getMinutes()).padStart(2,'0') : '—';
       const sourceBadge = fromPublic ? '<span class="badge public">Public</span>' : '<span class="badge admin">Admin</span>';
@@ -599,15 +653,13 @@
           : Date.now();
         const next = new Date(base + 7 * 86400000).toISOString();
         await SB.from('keys').update({ expires_at: next }).eq('key', k);
-        try { await SB.from('admin_log').insert({ action:'extend', target:k }); } catch {}
         say('Extended 7 days');
         loadKeys();
       });
 
       item.querySelector('[data-act="revoke"]').addEventListener('click', async ()=>{
-        if (!confirm('Revoke ' + k + '?\n\nThis deletes the key. The device will need a new one.')) return;
+        if (!confirm('Revoke ' + k + '?\n\nThe device will need a new key.')) return;
         await SB.from('keys').delete().eq('key', k);
-        try { await SB.from('admin_log').insert({ action:'revoke', target:k }); } catch {}
         say('Revoked');
         loadKeys(); loadStats();
       });
@@ -635,7 +687,7 @@
       if (exp && exp < now) expired++;
       else if (k.device_id) active++;
       if (k.device_id) bound++; else unused++;
-      if ((k.note || '').toLowerCase().includes('public') || (k.note || '').toLowerCase().includes('auto-issued')) fromPublic++;
+      if ((k.note || '').toLowerCase().includes('public')) fromPublic++;
     });
     $('sTotal').textContent = data.length;
     $('sActive').textContent = active;
@@ -668,4 +720,4 @@
 </script>
 
 </body>
-  </html>
+          </html>
